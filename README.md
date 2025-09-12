@@ -34,24 +34,28 @@ Students applying through KUCCPS face difficulty in selecting appropriate course
 ### 🔹 Sample Preview
 ```python
 df = pd.read_csv("programmes.csv")
-df.head()
-3. Data Preparation
-🔹 Format Correction
+df.head() 
+```
+## 3. Data Preparation
+
+### Format Correction
 Initial inspection of the DataFrame's structure and data types.
 
-python
+```
 df.info()
-🔹 Handling Missing Values
+```
+### Handling Missing Values
 Imputation of missing values for the year columns (2015-2021) using forward and backward filling.
 
-python
+```
 nan_years = [str(y) for y in range(2015, 2022)]
 df[nan_years] = df[nan_years].ffill(axis=1)
 df[nan_years] = df[nan_years].bfill(axis=1)
-🔹 Feature Engineering
+```
+### Feature Engineering
 Subjects were grouped into 5 categories (Core, Sciences, Humanities, Technical, Languages). A unique "Cluster Group" was assigned to each course based on its subject combination fingerprint.
 
-python
+```
 # Create a unique key from the sorted subject combinations
 df['subject_key'] = df[['Cluster Subject 1','Cluster Subject 2','Cluster Subject 3','Cluster Subject 4']].apply(
     lambda row: tuple(sorted(row.astype(str).str.strip())), axis=1
@@ -60,15 +64,17 @@ df['subject_key'] = df[['Cluster Subject 1','Cluster Subject 2','Cluster Subject
 # Map each unique combination to a cluster group ID
 subject_to_cluster = {combo: idx+1 for idx, combo in enumerate(df['subject_key'].unique())}
 df['Cluster Group'] = df['subject_key'].map(subject_to_cluster)
-4. Modeling
-🔹 Libraries Used
-python
+```
+## 4. Modeling
+### Libraries Used
+```
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.model_selection import train_test_split
 from sklearn.pipeline import Pipeline
 from sklearn.compose import ColumnTransformer
 from sklearn.metrics import r2_score, mean_squared_error
-🔹 Approach
+```
+### Approach
 Model: RandomForestRegressor
 
 Input Features: Cluster group, subject combinations, institution
@@ -77,15 +83,15 @@ Target Output: Predicted cluster points for upcoming years
 
 Goal: To predict future cutoff points based on historical data.
 
-5. Evaluation
-🔹 Metrics Used
-R² Score
+## 5. Evaluation
+### Metrics Used
+1. R² Score
 
-Mean Squared Error (MSE)
+2. Mean Squared Error (MSE)
 
 Evaluation results will be added once the model is finalized and tested on validation data.
 
-6. Deployment (Planned)
+## 6. Deployment
 Build a simple web interface where students can input their KCSE subject grades.
 
 Use the trained model to recommend qualifying programs based on their predicted cluster scores.
