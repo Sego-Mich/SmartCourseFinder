@@ -1,6 +1,6 @@
-# 📊 KUCCPS Course Cluster Prediction
+# SMARTCOURSEFINDER
 
-## 📌 Overview
+## Overview
 
 Each year, students applying for tertiary education through KUCCPS (Kenya Universities and Colleges Central Placement Service) face challenges in identifying suitable course clusters. These challenges often stem from the **dynamic nature of cluster point requirements**, **variation in student performance**, and **frequent changes in course offerings** across institutions.
 
@@ -8,7 +8,7 @@ Students frequently lack the tools or insights to make **data-driven decisions**
 
 ---
 
-# 🧠 CRISP-DM Methodology
+# CRISP-DM Methodology
 
 ## 1. Business Understanding
 
