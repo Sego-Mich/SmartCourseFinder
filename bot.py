@@ -1,16 +1,11 @@
 import streamlit as st
 import random
-import re
 import pandas as pd
 
-# Load the programmes data
-@st.cache(allow_output_mutation=True)
+# Load the programmes data 
 def load_programmes():
-    # Load from CSV file
-    df = pd.read_csv('programmes.csv')
-    df=df.sort_values(by="2021", ascending=False)
-    
-    # Clean up column names (remove any leading/trailing spaces)
+    df = pd.read_csv('degree_req_cutoff.csv')
+    df = df.sort_values(by="pred_cutoff_2025", ascending=False)
     df.columns = df.columns.str.strip()
     
     return df
@@ -18,22 +13,20 @@ def load_programmes():
 programmes_df = load_programmes()
 
 # KUCCPS subjects
-compulsory_subjects = ['ENG', 'KISW', 'CHEM','BIO']
+compulsory_subjects = ['ENG', 'KISW', 'CHEM', 'BIO']
 math_variants = ['MAT A', 'MAT B']
 other_subjects = [
-     'PHY', 'AGR', 'HSC', 'HIST', 'GEO', 'CRE', 'ART',
+    'PHY', 'AGR', 'HSC', 'HIST', 'GEO', 'CRE', 'ART',
     'BS', 'COMP', 'AVT', 'ELEC', 'MET', 'WOOD', 'HAG'
 ]
 
-all_subjects = compulsory_subjects + math_variants + other_subjects
-
-grades = grades = ['A', 'A-', 'B+', 'B', 'B-', 'C+', 'C', 'C-', 'D+', 'D', 'D-', 'E']
-
+grades = ['A', 'A-', 'B+', 'B', 'B-', 'C+', 'C', 'C-', 'D+', 'D', 'D-', 'E']
 
 grade_points = {
     'A': 12, 'A-': 11, 'B+': 10, 'B': 9, 'B-': 8,
     'C+': 7, 'C': 6, 'C-': 5, 'D+': 4, 'D': 3, 'D-': 2, 'E': 1
 }
+
 cluster_subjects = {
     1: ["ENG/KIS", "MAT A/B", "BIO/PHY/CHE", "GRP III/IV/V"],        # Law
     2: ["ENG/KIS", "ENG/KIS", "MAT A/B", "GRP II/III/IV/V"],         # Business
@@ -56,19 +49,145 @@ cluster_subjects = {
     19: ["ENG", "MAT A/B or GRP II", "2nd GRP II", "KIS or GRP II/III/IV/V"], # Education
     20: ["CRE/IRE/HRE", "ENG/KIS", "2nd GRP III", "GRP II/IV/V"],     # Religious Studies
 }
-group_definitions = { 'ENG/KIS': ['ENG', 'KISW'], 'MAT A/B': ['MAT A', 'MAT B'], 'MAT A/B or GRP II': ['MAT A', 'MAT B', 'BIO', 'PHY', 'CHE', 'AGR'], 'MAT A or PHY': ['MAT A', 'PHY'], 'GRP II': ['BIO', 'PHY', 'CHE', 'AGR'], 'GRP III': ['HIST', 'GEO', 'CRE', 'IRE', 'HRE'], 'GRP IV': ['BS', 'COMP', 'AVT', 'ELEC', 'MET', 'WOOD'], 'GRP V': ['HSC', 'ART', 'HAG', 'MUS'], 'BIO/PHY/CHE': ['BIO', 'PHY', 'CHE'], 'GRP II/III/IV/V': ['BIO', 'PHY', 'CHE', 'AGR', 'HIST', 'GEO', 'CRE', 'IRE', 'HRE', 'BS', 'COMP', 'AVT', 'ELEC', 'MET', 'WOOD', 'HSC', 'ART', 'HAG', 'MUS'], 'ENG/KIS or GRP III/IV/V': ['ENG', 'KISW', 'HIST', 'GEO', 'CRE', 'IRE', 'HRE', 'BS', 'COMP', 'AVT', 'ELEC', 'MET', 'WOOD', 'HSC', 'ART', 'HAG', 'MUS'], 'ENG/KIS or GRP II/III/IV/V': ['ENG', 'KISW', 'BIO', 'PHY', 'CHE', 'AGR', 'HIST', 'GEO', 'CRE', 'IRE', 'HRE', 'BS', 'COMP', 'AVT', 'ELEC', 'MET', 'WOOD', 'HSC', 'ART', 'HAG', 'MUS'], 'KIS or GRP II/III/IV/V': ['KISW', 'BIO', 'PHY', 'CHE', 'AGR', 'HIST', 'GEO', 'CRE', 'IRE', 'HRE', 'BS', 'COMP', 'AVT', 'ELEC', 'MET', 'WOOD', 'HSC', 'ART', 'HAG', 'MUS'], 'BIO/HSC': ['BIO', 'HSC'], '2nd GRP II': ['BIO', 'PHY', 'CHE', 'AGR'], '2nd GRP III': ['HIST', 'GEO', 'CRE', 'IRE', 'HRE'], 'PHY/CHE': ['PHY', 'CHE'], 'CHE/BIO/GEO': ['CHE', 'BIO', 'GEO'], 'BIO/CHE/GEO': ['BIO', 'CHE', 'GEO'], 'FRE/GER': ['FRE', 'GER'], 'MUS': ['MUS'], 'GEO': ['GEO'] }
+field_to_clusters = {
+    # Legal & Governance
+    "law": [1],  # Cluster 1: Law
+
+    # Business, Finance, Economics
+    "business": [2],  # Cluster 2: Business & Commerce
+    "commerce": [2],
+    "accounting": [2],
+    "finance": [2],
+    "economics": [2, 10],  # Cluster 10 includes Actuarial Science & Economics
+
+    # Social Sciences & Arts
+    "social science": [3, 14, 20],  # Cluster 3: Social Sciences, 14: History, 20: Religion
+    "arts": [3, 14, 17, 18, 20],
+    "humanities": [3, 14, 17, 18, 20],
+    "history": [14],
+    "philosophy": [3, 20],
+    "psychology": [3],
+    "languages": [17],
+    "music": [18],
+    "religion": [20],
+    "theology": [20],
+    "communication": [3],
+    "journalism": [3],
+
+    # Education & Teaching
+    "education": [19],  # Cluster 19: Education
+    "teaching": [19],
+
+    # Science & Math
+    "science": [9, 10],  # 9: General Sciences, 10: Actuarial/Math-heavy
+    "mathematics": [10],
+    "physics": [9],
+    "chemistry": [9],
+    "biology": [9],
+    "statistics": [10],
+    "actuarial": [10],
+
+    # Engineering & Technology
+    "engineering": [5],  # Cluster 5: Engineering
+    "civil engineering": [5],
+    "mechanical engineering": [5],
+    "electrical engineering": [5],
+    "mechatronics": [5],
+    "technology": [5, 7],  # Engineering + Computing
+
+    # ICT & Computing
+    "it": [7],
+    "ict": [7],
+    "computer science": [7],
+    "computing": [7],
+    "information technology": [7],
+    "software": [7],
+    "data science": [7, 10],
+
+    # Health & Medicine
+    "health": [11, 12, 13],  # 13: Medicine, 11: Interior Design (partially), 12: Sport Science
+    "medicine": [13],
+    "nursing": [13],
+    "clinical": [13],
+    "medical": [13],
+    "pharmacy": [13],
+    "public health": [13],
+    "nutrition": [13],
+    "dietetics": [13],
+    "sport science": [12],
+    "occupational therapy": [13],
+    "physiotherapy": [13],
+    "biomedical": [9, 13],
+
+    # Agriculture & Environment
+    "agriculture": [8, 15],  # 8: Agribusiness, 15: Agriculture
+    "agribusiness": [8],
+    "agronomy": [15],
+    "veterinary": [13],  # Often shares cluster with medicine
+    "environmental science": [15],
+    "soil science": [15],
+    "forestry": [15],
+
+    # Architecture & Built Environment
+    "architecture": [6],  # Cluster 6: Architecture
+    "landscape architecture": [6],
+    "urban planning": [6],
+    "quantity surveying": [6],
+    "construction management": [6],
+
+    # Geosciences & Earth Sciences
+    "geoscience": [4],
+    "geology": [4],
+    "earth science": [4],
+    "meteorology": [4],
+    "environment": [4, 15],
+
+    # Interior Design & Art
+    "interior design": [11],
+    "design": [11],
+    "fine art": [18],
+    "graphic design": [11, 18],
+    "applied art": [18],
+}
+
+
+group_definitions = {
+    'ENG/KIS': ['ENG', 'KISW'],
+    'MAT A/B': ['MAT A', 'MAT B'],
+    'MAT A/B or GRP II': ['MAT A', 'MAT B', 'BIO', 'PHY', 'CHE', 'AGR'],
+    'MAT A or PHY': ['MAT A', 'PHY'],
+    'GRP II': ['BIO', 'PHY', 'CHE', 'AGR'],
+    'GRP III': ['HIST', 'GEO', 'CRE', 'IRE', 'HRE'],
+    'GRP IV': ['BS', 'COMP', 'AVT', 'ELEC', 'MET', 'WOOD'],
+    'GRP V': ['HSC', 'ART', 'HAG', 'MUS'],
+    'BIO/PHY/CHE': ['BIO', 'PHY', 'CHE'],
+    'GRP II/III/IV/V': ['BIO', 'PHY', 'CHE', 'AGR', 'HIST', 'GEO', 'CRE', 'IRE', 'HRE',
+                       'BS', 'COMP', 'AVT', 'ELEC', 'MET', 'WOOD', 'HSC', 'ART', 'HAG', 'MUS'],
+    'ENG/KIS or GRP III/IV/V': ['ENG', 'KISW', 'HIST', 'GEO', 'CRE', 'IRE', 'HRE',
+                                'BS', 'COMP', 'AVT', 'ELEC', 'MET', 'WOOD', 'HSC', 'ART', 'HAG', 'MUS'],
+    'ENG/KIS or GRP II/III/IV/V': ['ENG', 'KISW', 'BIO', 'PHY', 'CHE', 'AGR', 'HIST', 'GEO', 'CRE',
+                                  'IRE', 'HRE', 'BS', 'COMP', 'AVT', 'ELEC', 'MET', 'WOOD', 'HSC', 'ART', 'HAG', 'MUS'],
+    'KIS or GRP II/III/IV/V': ['KISW', 'BIO', 'PHY', 'CHE', 'AGR', 'HIST', 'GEO', 'CRE', 'IRE', 'HRE',
+                              'BS', 'COMP', 'AVT', 'ELEC', 'MET', 'WOOD', 'HSC', 'ART', 'HAG', 'MUS'],
+    'BIO/HSC': ['BIO', 'HSC'],
+    '2nd GRP II': ['BIO', 'PHY', 'CHE', 'AGR'],
+    '2nd GRP III': ['HIST', 'GEO', 'CRE', 'IRE', 'HRE'],
+    'PHY/CHE': ['PHY', 'CHE'],
+    'CHE/BIO/GEO': ['CHE', 'BIO', 'GEO'],
+    'BIO/CHE/GEO': ['BIO', 'CHE', 'GEO'],
+    'FRE/GER': ['FRE', 'GER'],
+    'MUS': ['MUS'],
+    'GEO': ['GEO'],
+}
 
 def calculate_cluster_points_per_group(subjects, grades):
     cluster_points = {}
 
-    # Loop through each cluster group (1 to 20)
     for cluster_id, cluster_reqs in cluster_subjects.items():
         selected_subjects = []
-        
+
         for req in cluster_reqs:
-            matched = []
-            
-            # Handle 'OR' and '/' cases
+            # Handle 'or' and '/' as options
             if ' or ' in req:
                 options = req.split(' or ')
             elif '/' in req:
@@ -76,13 +195,12 @@ def calculate_cluster_points_per_group(subjects, grades):
             else:
                 options = [req]
 
-            # Flatten compound group labels (e.g. GRP II/III/IV/V)
             expanded_options = []
             for opt in options:
                 opt = opt.strip()
                 expanded_options += group_definitions.get(opt, [opt])
 
-            # Find highest scoring subject in the matched group
+            # Find highest scoring subject in the group
             best_subject = None
             best_score = -1
             for subj in expanded_options:
@@ -95,134 +213,82 @@ def calculate_cluster_points_per_group(subjects, grades):
             if best_subject:
                 selected_subjects.append(best_score)
 
-        # Take sum of best 4 subjects
+        # Sum of best 4 subjects for cluster points
         if len(selected_subjects) == 4:
-            total = sum(selected_subjects)
-            cluster_points[cluster_id] = round(total, 2)
+            cluster_points[cluster_id] = round(sum(selected_subjects), 2)
         else:
-            cluster_points[cluster_id] = None  # Not enough subjects matched
+            cluster_points[cluster_id] = None  # Not enough matched subjects
 
     return cluster_points
+import re
 
-# Extract unique institutions from the dataframe
-all_institutions = programmes_df['Institution'].unique().tolist()
- 
+def generate_acronyms(institution_list):
+    acronym_map = {}
+
+    for name in institution_list:
+        if not isinstance(name, str) or not name.strip():
+            continue
+
+        words = name.split()
+
+        # Basic acronym from first letters (uppercase)
+        acronym = ''.join(word[0].upper() for word in words if word[0].isalpha())
+
+        # UoN-style acronyms: lowercase for 'of', 'and', 'the'
+        acronym_with_small = ''.join(
+            word[0].lower() if word.lower() in ['of', 'and', 'the'] else word[0].upper()
+            for word in words if word[0].isalpha()
+        )
+
+        # Only add if not already in the map to preserve manual ones later
+        if acronym not in acronym_map:
+            acronym_map[acronym] = name
+        if acronym_with_small not in acronym_map:
+            acronym_map[acronym_with_small] = name
+
+    # 👇 Manual fix: explicitly map KCA
+    acronym_map['JKUAT'] = 'Jomo Kenyatta University of Agriculture and Technology'
+    acronym_map['KU'] = 'Kenyatta University'
+    acronym_map['KCA'] = 'Kca University'
+
+
+    return acronym_map
+
+
+
+
+# Extract unique institutions
+all_institutions = programmes_df['institution'].unique().tolist()
+acronym_to_full = generate_acronyms(all_institutions)
+
 st.title("🎲 KUCCPS Degree & Institution Recommender Bot")
 
-def calculate_cluster_points(subjects, grades, cluster_subs):
-    points = 0
-    math_point = 0
-    if 'MAT A' in subjects:
-        math_point = grade_points[grades['MAT A']]
-    elif 'MAT B' in subjects:
-        math_point = grade_points[grades['MAT B']]
-    for subj in cluster_subs:
-        if subj in ['MAT A', 'MAT B']:
-            points += math_point
-        elif subj in subjects:
-            points += grade_points[grades[subj]]
-    return points
-
-def parse_grade_requirement(grade_str):
-    """Parse grade requirement strings like 'MAT A: C+'"""
-    if pd.isna(grade_str):
-        return None, None
-    
-    if ':' in str(grade_str):
-        subject, grade = str(grade_str).split(':')
-    
-        return subject.strip(), grade.strip()
-        
-    return None, None
-
-def get_recommended_programmes(subjects, user_grades):
-    recommended = []
-    for _, programme in programmes_df.iterrows():
-        # Check if user has the required subjects 
-        required_subjects = [
-            programme['Cluster Subject 1'],
-            programme['Cluster Subject 2'],
-            programme['Cluster Subject 3'],
-            programme['Cluster Subject 4']
-        ]
-        
-        # Check if user meets subject requirements
-        has_subjects = all(subj in subjects for subj in required_subjects)
-        
-        if has_subjects:
-            # Check if user meets grade requirements for key subjects
-            meets_grade_requirements = True
-            
-            # Parse subject 1 requirement
-            subj1_req = programme['Subject 1 Requirement']
-            if pd.notna(subj1_req):
-                req_subject, req_grade = parse_grade_requirement(subj1_req)
-                if req_subject and req_grade:
-                    user_grade = user_grades.get(req_subject, 'E')
-                     
-                    # Compare grades (lower index in grades list is better)
-                    if grades.index(user_grade) > grades.index(req_grade):
-                        meets_grade_requirements = False
-            
-            # Parse subject 2 requirement
-            subj2_req = programme['Subject 2 Requirement']
-            if pd.notna(subj2_req) and meets_grade_requirements:
-                req_subject, req_grade = parse_grade_requirement(subj2_req)
-                if req_subject and req_grade:
-                    user_grade = user_grades.get(req_subject, 'E')
-                    if grades.index(user_grade) > grades.index(req_grade):
-                        meets_grade_requirements = False
-            
-            if meets_grade_requirements:
-                recommended.append(programme)
-    
-    return recommended
-
-science_subjects = ['BIO','PHY']  # Include CHEM only if not compulsory (else ignore)
+science_subjects = ['BIO', 'PHY']  # Exclude CHEM because compulsory
 humanities_subjects = ['HSC', 'HIST', 'GEO', 'CRE', 'ART']
-technical_subjects = ['AGR','BS', 'COMP', 'AVT', 'ELEC', 'MET', 'WOOD', 'HAG']
+technical_subjects = ['AGR', 'BS', 'COMP', 'AVT', 'ELEC', 'MET', 'WOOD', 'HAG']
+ 
+
+allowed_grades_for_generation = ['A', 'A-']
 
 if st.button("Generate Random KUCCPS Profile"):
-    chosen_subjects = compulsory_subjects.copy()  # ENG, KISW, CHEM
-    
-    # Choose one math variant
-    chosen_math = random.choice(math_variants)
-    chosen_subjects.append(chosen_math)
-    
-    # Now we must select remaining subjects to total 8 subjects
-    remaining = 8 - len(chosen_subjects)  # should be 8 - 4 = 4 subjects left
-    
-    # Pick at least:
-    # - 2 science (excluding CHEM because compulsory)
-    # - 1 humanities
-    # - 1 technical
-    
-    # Select 2 science subjects (exclude CHEM which is compulsory)
-    # Pick 0 or 1 additional science subject (excluding CHEM which is already included)
-    selected_sciences = random.sample([s for s in science_subjects if s != 'BIO'], k=random.randint(0, 1))
+    # Always include ENG, KISW, MAT A
+    chosen_subjects = ['ENG', 'KISW', 'MAT A']
 
-    
-    # Select 1 humanities subject
-    selected_humanity = random.sample(humanities_subjects, 1)
-    
-    # Select 1 technical subject
-    selected_technical = random.sample(technical_subjects, 1)
-    
-    # Combine all selected subjects
-    selected_subjects = selected_sciences + selected_humanity + selected_technical
-    
-    # Add these to chosen_subjects
-    chosen_subjects += selected_subjects
-    
-    # Safety check - if we have less than 8 (should not happen here), fill with random from other subjects excluding already picked
-    if len(chosen_subjects) < 8:
-        already_chosen = set(chosen_subjects)
-        remaining_subjects = [s for s in other_subjects if s not in already_chosen]
-        chosen_subjects += random.sample(remaining_subjects, 8 - len(chosen_subjects))
-    
-    # Generate grades - assuming you want highest grade 'A' for all randomly generated subjects (or random grades from full grades list)
-    user_grades = {subj: random.choice(grades) for subj in chosen_subjects}
-    
+    # Add 2 or all 3 of BIO, CHEM, PHY
+    science_combo = random.sample(['BIO', 'CHEM', 'PHY'], k=random.choice([2, 3]))
+    chosen_subjects += science_combo
+
+    # Total so far
+    remaining_slots = 8 - len(chosen_subjects)
+
+    # Fill the remaining subjects from other groups
+    remaining_subject_pool = [s for s in other_subjects if s not in chosen_subjects]
+    chosen_subjects += random.sample(remaining_subject_pool, remaining_slots)
+
+    # Generate grades (C to A only)
+    user_grades = {subj: random.choice(allowed_grades_for_generation) for subj in chosen_subjects}
+
+    # Store in session
     st.session_state['user_profile'] = (chosen_subjects, user_grades)
     st.session_state['chat_history'] = []
     st.success("Random KUCCPS profile generated! You can now ask the bot questions.")
@@ -231,8 +297,8 @@ if 'user_profile' not in st.session_state:
     st.info("Please generate a random KUCCPS profile first.")
     st.stop()
 
-# Show generated profile horizontally
 subjects, user_grades = st.session_state['user_profile']
+
 st.subheader("🎓 Current KUCCPS Profile")
 cols = st.columns(8)
 for idx, subj in enumerate(subjects):
@@ -240,35 +306,13 @@ for idx, subj in enumerate(subjects):
         st.markdown(f"**{subj}**")
         st.markdown(f"*Grade: {user_grades[subj]}*")
 
-def calculate_weighted_cluster_points(cluster_grades, grade_points, mean_grade):
-    """
-    Calculate Weighted Cluster Points (WCP) based on cluster grades.
-
-    Parameters:
-    - cluster_grades: list of grades for the cluster (e.g. ['A', 'B', 'A'])
-    - grade_points: dict mapping grades to points (e.g. {'A': 12, 'B': 10, ...})
-    - mean_grade: the mean grade (string) across the cluster subjects
-
-    Returns:
-    - Weighted Cluster Points (float)
-    """
-    raw_cluster_points = sum(grade_points[g] for g in cluster_grades if g in grade_points)
-
-    performance_index = grade_points.get(mean_grade, 0) / 12  # safeguard with get()
-
-    wcp = raw_cluster_points * performance_index
-    return wcp
-
 if st.checkbox("Show Cluster Points for All Groups"):
-    subjects, user_grades = st.session_state['user_profile']
     cluster_pts = calculate_cluster_points_per_group(subjects, user_grades)
-
     st.subheader("📊 Your Cluster Points (out of 48)")
-    
-    # Arrange 5 columns per row for a clean horizontal layout
+
     num_clusters = len(cluster_pts)
     num_cols = 5
-    rows = (num_clusters + num_cols - 1) // num_cols  # total rows needed
+    rows = (num_clusters + num_cols - 1) // num_cols
 
     cluster_items = list(cluster_pts.items())
     idx = 0
@@ -279,127 +323,158 @@ if st.checkbox("Show Cluster Points for All Groups"):
             if idx < len(cluster_items):
                 cluster_id, pts = cluster_items[idx]
                 if pts is not None:
-                    col.markdown(f"**Cluster {cluster_id}:** {pts}")
+                    col.markdown(f"**Cluster {cluster_id}: {pts} pts**")
                 else:
-                    col.markdown(f"**Cluster {cluster_id}:** _N/A_")
+                    col.markdown(f"**Cluster {cluster_id}: N/A**")
                 idx += 1
 
-# Chat bot interface
-st.markdown("---")
-st.subheader("🤖 Chat with the Recommender Bot")
+def detect_intent(text, acronym_map, institution_list, field_to_clusters):
+    text_lower = text.lower().strip()
+
+    matched_institution = None
+
+    # ✅ First: exact match with known acronyms (e.g. 'jkuat')
+    if text_lower in [ac.lower() for ac in acronym_map]:
+        for acronym, full_name in acronym_map.items():
+            if acronym.lower() == text_lower:
+                matched_institution = full_name
+                break
+
+    # ✅ Second: fallback to acronym substring detection
+    if not matched_institution:
+        for acronym, full_name in acronym_map.items():
+            if acronym.lower() in text_lower:
+                matched_institution = full_name
+                break
+
+    # ✅ Third: check institution names in text
+    if not matched_institution:
+        for name in institution_list:
+            if name.lower() in text_lower:
+                matched_institution = name
+                break
+
+    # Detect field
+    matched_field = None
+    for field in field_to_clusters:
+        if field in text_lower:
+            matched_field = field
+            break
+
+    # Determine intent
+    if matched_institution and matched_field:
+        return 'recommend_programme', matched_field, matched_institution
+    elif matched_field:
+        return 'recommend_programme', matched_field, None
+    elif matched_institution:
+        return 'institution_info', None, matched_institution
+    else:
+        return 'general', None, None
+
+
+def recommend_programmes(subjects, grades, programmes_df, margin=2, top_n=10, allowed_clusters=None, field=None):
+    cluster_pts = calculate_cluster_points_per_group(subjects, grades)
+    recommendations = []
+
+    # Get allowed clusters if field is specified
+    allowed_clusters = field_to_clusters.get(field.lower()) if field else allowed_clusters
+
+    for _, row in programmes_df.iterrows():
+        cluster_id = row['cluster']
+
+        if allowed_clusters and cluster_id not in allowed_clusters:
+            continue  # skip if not in allowed field clusters
+
+        cutoff = row['pred_cutoff_2025']
+        user_points = cluster_pts.get(cluster_id)
+
+        if user_points is None:
+            continue
+
+        if cutoff <= user_points + margin:
+            diff = abs(user_points - cutoff)
+            recommendations.append((diff, f"{row['programme_name']} at {row['institution']} (Cutoff: {cutoff} pts)"))
+
+    recommendations.sort(key=lambda x: x[0])
+    return [rec[1] for rec in recommendations[:top_n]]
+
+
+def institution_info(institution_name):
+    if not institution_name:
+        return "Please specify a university or institution name."
+
+    # Ensure 'institution' column has no NaNs
+    clean_df = programmes_df.dropna(subset=['institution'])
+
+    # Do a case-insensitive match
+    matches = clean_df[clean_df['institution'].str.contains(institution_name, case=False, na=False)]
+
+    if matches.empty:
+        return f"Sorry, I couldn't find any programmes for **{institution_name.title()}**."
+    else:
+        programs_list = matches['programme_name'].dropna().unique()
+        return f"📚 {institution_name.title()} offers the following programmes:\n\n- " + "\n- ".join(programs_list)
+def resolve_institution_name_from_input(text, acronym_map, institution_list):
+    text_lower = text.lower().strip()
+
+    for acronym, full_name in acronym_map.items():
+        if acronym.lower() == text_lower:
+            print(f"Matched exact acronym: {acronym} → {full_name}")
+            return full_name
+
+    for acronym, full_name in acronym_map.items():
+        if acronym.lower() in text_lower:
+            print(f"Matched contained acronym: {acronym} → {full_name}")
+            return full_name
+
+    for name in institution_list:
+        if name.lower() in text_lower:
+            print(f"Matched name: {name}")
+            return name
+
+    print("No institution matched")
+    return None
+
+
+
+def respond_to_user(message):
+    intent, field, institution = detect_intent(
+        message, acronym_to_full, all_institutions, field_to_clusters
+    )
+
+    if intent == 'recommend_programme':
+        allowed_clusters = field_to_clusters.get(field.lower()) if field else None
+        recommendations = recommend_programmes(subjects, user_grades, programmes_df, allowed_clusters=allowed_clusters)
+
+        if recommendations:
+            response = f"Here are some {field or ''} programmes you might consider based on your profile:\n\n"
+            response += "\n".join(f"{i+1}. {rec}" for i, rec in enumerate(recommendations))
+            if institution:
+                response += f"\n\nNote: You asked about {institution}. These programmes may be available there or elsewhere."
+        else:
+            response = "Sorry, I couldn't find any suitable programmes matching your profile and interests."
+
+    elif intent == 'institution_info':
+        response = institution_info(institution)
+    else:
+        response = "Sorry, I can currently only recommend programmes or provide institution info."
+
+    return response
+
 
 if 'chat_history' not in st.session_state:
     st.session_state['chat_history'] = []
 
-user_input = st.text_input("Ask your question here (e.g., 'Which programmes am I recommended?', 'What programmes am I qualified for at X university?')")
-
-# Synonym sets
-programme_synonyms = ['programme', 'program', 'course', 'degree', 'study', 'major', 'field']
-institution_synonyms = ['institution', 'college', 'university', 'uni', 'school', 'campus']
-qualification_synonyms = ['qualify', 'eligible', 'admit', 'accept', 'admission']
-recommend_synonyms = ['recommend', 'suggest', 'advise', 'best', 'fit']
-
-def extract_institution(text, institution_list):
-    text_lower = text.lower()
-    for inst in institution_list:
-        if str(inst).lower() in text_lower:
-            return inst
-    return None
-
-def detect_intent(text):
-    text_lower = text.lower()
-    # Check for recommend intent
-    if any(word in text_lower for word in recommend_synonyms) and any(word in text_lower for word in programme_synonyms):
-        return 'recommend_programme'
-    if any(word in text_lower for word in institution_synonyms) and any(word in text_lower for word in qualification_synonyms):
-        return 'list_institutions'
-    if any(word in text_lower for word in programme_synonyms) and any(word in text_lower for word in institution_synonyms):
-        return 'institution_programmes'
-    # fallback generic queries
-    if 'programme' in text_lower or 'course' in text_lower or 'degree' in text_lower:
-        return 'recommend_programme'
-    if 'institution' in text_lower or 'university' in text_lower:
-        return 'list_institutions'
-    return 'unknown'
-
-def bot_response_advanced(user_input):
-    subjects, grades = st.session_state['user_profile']
-    recommended_programmes = get_recommended_programmes(subjects, grades)
-     
-    intent = detect_intent(user_input)
-    institution_in_question = extract_institution(user_input, all_institutions)
-
-    if intent == 'recommend_programme':
-        if not recommended_programmes:
-            return "Based on your profile, I couldn't find any programmes that match your qualifications."
-        
-        response = "Based on your profile, I recommend these degree programmes:\n"
-        i=0
-        for prog in recommended_programmes:
-            
-            response += f"- {prog['Programme']} at {prog['Institution']} (Cut off 2021: {prog['2021']})\n"
-            i+=1
-            if i==5:break
-        return response
-    
-    elif intent == 'list_institutions':
-        if institution_in_question:
-            # Filter programmes by institution
-            inst_programmes = [p for p in recommended_programmes if p['Institution'] == institution_in_question]
-            if not inst_programmes:
-                return f"You don't qualify for any programmes at {institution_in_question} based on your current profile."
-            i=0
-            response = f"You qualify for these programmes at {institution_in_question}:\n"
-            for prog in inst_programmes:
-                response += f"- {prog['Programme']} (Cut off 2015: {prog['2015']})\n"
-                i+=1
-                if i==5:break
-            return response
-        else:
-            # List all institutions the user qualifies for
-            qualified_institutions = list(set(p['Institution'] for p in recommended_programmes))
-            if not qualified_institutions:
-                return "Based on your profile, you don't qualify for any programmes at the institutions in our database."
-            
-            return ("Based on your profile, you qualify for admission at these institutions:\n- " +
-                    "\n- ".join(qualified_institutions))
-    
-    elif intent == 'institution_programmes':
-        if institution_in_question:
-            # Filter programmes by institution
-            inst_programmes = [p for p in recommended_programmes if p['Institution'] == institution_in_question]
-            if not inst_programmes:
-                return f"{institution_in_question} doesn't have any programmes that match your qualifications."
-            
-            response = f"At {institution_in_question}, you can study these programmes:\n"
-            for prog in inst_programmes:
-                print(type(prog))
-                response += f"- {prog['Programme']} (Code: {prog['program_code']})\n"
-            return response
-        else:
-            # No institution mentioned, fallback to programmes
-            if not recommended_programmes:
-                return "Based on your profile, I couldn't find any programmes that match your qualifications."
-            
-            response = "I recommend these degree programmes based on your profile:\n"
-            for prog in recommended_programmes:
-                print(type(prog))
-                response += f"- {prog['Programme']} at {prog['Institution']} (Code: {prog['program_code']})\n"
-            return response
-    else:
-        return ("I'm sorry, I didn't quite understand your question. "
-                "You can ask things like:\n- 'Which programmes am I recommended?'\n"
-                "- 'What institutions am I qualified for?'\n"
-                "- 'What programmes can I study at X university?'")
+user_input = st.text_input("Ask me about KUCCPS degree & institution recommendations:")
 
 if user_input:
-    st.session_state['chat_history'].append(("User", user_input))
-    reply = bot_response_advanced(user_input)
-    st.session_state['chat_history'].append(("Bot", reply)) 
+    answer = respond_to_user(user_input)
+    st.session_state['chat_history'].append(("You", user_input))
+    st.session_state['chat_history'].append(("Bot", answer))
 
-# Display chat history
-for sender, msg in st.session_state['chat_history']:
-    if sender == "User":
-        st.markdown(f"**You:** {msg}")
-    else:
-        st.markdown(f"**Bot:** {msg}")
+if st.session_state['chat_history']:
+    for speaker, text in st.session_state['chat_history']:
+        if speaker == "You":
+            st.markdown(f"**{speaker}:** {text}")
+        else:
+            st.markdown(f"**{speaker}:** {text}")
